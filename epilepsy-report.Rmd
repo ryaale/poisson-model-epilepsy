@@ -1,6 +1,6 @@
 ---
-title: "Generalized Linear Models Assignment"
-subtitle: "Alexander James Ryan r0693898"
+title: "Epilepsy Analysis"
+subtitle: "Alexander James Ryan"
 output: pdf_document
 toc: true
 toc_depth: 3
@@ -13,7 +13,6 @@ library(knitr)
 opts_chunk$set(echo=FALSE,
                cache=TRUE, autodep=TRUE, cache.comments=FALSE,
                message=FALSE, warning=FALSE)
-renal <- read_excel("~/Desktop/GLM/Assignment/GLM Solo Assignment/renal.xlsx")
 epilepsy <- read.table("~/Desktop/GLM/Assignment/GLM Solo Assignment/epilepsy.txt", header = TRUE)
 ```
 
@@ -42,9 +41,6 @@ seizure.poisson.2 <- glm(seizure.model.2, family = poisson(link = "log"), data =
 
 anova(seizure.poisson.1, seizure.poisson.2, test="Chisq")
 summary(seizure.poisson.2)
-
-
-
 
 # Robust standard errors
 m1 <- seizure.poisson.2

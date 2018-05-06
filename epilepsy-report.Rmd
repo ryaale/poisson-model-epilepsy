@@ -1,0 +1,132 @@
+---
+title: "Generalized Linear Models Assignment"
+subtitle: "Alexander James Ryan r0693898"
+output: pdf_document
+toc: true
+toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(knitr)
+opts_chunk$set(echo=FALSE,
+               cache=TRUE, autodep=TRUE, cache.comments=FALSE,
+               message=FALSE, warning=FALSE)
+renal <- read_excel("~/Desktop/GLM/Assignment/GLM Solo Assignment/renal.xlsx")
+epilepsy <- read.table("~/Desktop/GLM/Assignment/GLM Solo Assignment/epilepsy.txt", header = TRUE)
+```
+
+## Analysis Epilepsy
+
+The goal of this analysis is to model the number of seizures suffered by patients, alongside their age and a treatment. Thus, the core goal is to measure the effectiveness of the treatment, Progabide, against the placebo group, in reducing the number of seizures.
+
+### Plot Seizures against treatment group
+
+``` {r plot, echo=FALSE, results=FALSE}
+# Plot of seizures against treatment group, Progabide or placebo
+ggplot(epilepsy, aes(seizure.rate, fill = treatment)) +
+  geom_histogram(binwidth=.5, position="dodge")
+```
+
+
+```{r question2_poisson_model, echo=FALSE, results=FALSE}
+require(ggplot2)
+require(sandwich)
+require(msm)
+seizure.model.1 <- 'seizure.rate ~ treatment + age'
+seizure.model.2 <- 'seizure.rate ~ treatment + age + treatment:age'
+
+seizure.poisson.1 <- glm(seizure.model.1, family = poisson(link = "log"), data = epilepsy)
+seizure.poisson.2 <- glm(seizure.model.2, family = poisson(link = "log"), data = epilepsy)
+
+anova(seizure.poisson.1, seizure.poisson.2, test="Chisq")
+summary(seizure.poisson.2)
+
+
+
+
+# Robust standard errors
+m1 <- seizure.poisson.2
+cov.m1 <- vcovHC(m1, type="HC0")
+std.err <- sqrt(diag(cov.m1))
+r.est <- cbind(Estimate = coef(m1), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(m1)/std.err), lower.tail=FALSE),
+LL = coef(m1) - 1.96 * std.err,
+UL = coef(m1) + 1.96 * std.err)
+
+r.est
+```
+
+### Poisson model
+
+Deviance residuals are approximately normally distributed if the model is specified correctly. Since the median residual deviance is a little less than zero (-0.9718), there is some evidence of skewness.
+
+The coefficient for age is approximately (-0.02), which means that expected log count of seizures to decrease by approximately (0.02) for every extra year of the person's age. This implies that as a child ages, the total number of seizures they experience should marginally decrease on average.
+
+The coefficient for treatmentProgabide is approximately (-0.20), which is the expected difference in the log count of seizures, between the group that received the treatment Progabide, and those that received the placebo. 
+
+### Overdispersion
+There seems to be the presence of a zero-inflated distribution, that is the number of zeros is inflated. When overdispersion is not taken into account, more variables will be significant when they shouldn't be. A solution to overdispersion, is to fit a Negative Binomial distribution model.
+
+When we fit a negative binomial model, we find that residual deviance (67.02) is much closer to the degrees of freedom (55), which means there is a much better fit than the Poisson model. This has an impact on the p values for the coefficients, which are now much less significant than they were in the Poisson model.
+```{r question2_ngbinmodel, echo=FALSE, results=FALSE}
+ngbinmodel <- glm.nb(seizure.model.2, data = epilepsy)
+summary(ngbinmodel)
+```
+
+### Interaction effects
+
+To test whether there is an interaction effect between treatment and age, we perform an analysis of deviance test, between a model that includes only treatment and age, and a model with treatment, age and the interaction effect between treatment and age. Thus, the null hypothesis is the difference between the models is equal to 0, whilst the alternative hypothesis is that the difference is not equal to 0.
+
+The model that includes the interaction effect between treatment and age has a significantly lower residual deviance, a difference of (20.431), with an associated p value of (~0). 
+This is evidence to say that there is a difference between the model that includes an interaction effect and a model that does not. The model that includes an interaction effect has a lower deviance, and therefore a better predictor of seizure rates.
+
+```{r question2_interaction_effects, echo=FALSE, results=FALSE}
+seizure.model.1 <- 'seizure.rate ~ treatment + age'
+seizure.model.2 <- 'seizure.rate ~ treatment + age + treatment:age'
+
+seizure.poisson.1 <- glm(seizure.model.1, family = poisson(link = "log"), data = epilepsy)
+seizure.poisson.2 <- glm(seizure.model.2, family = poisson(link = "log"), data = epilepsy)
+summary(seizure.poisson.2)
+anova(seizure.poisson.1, seizure.poisson.2, test="Chisq")
+```
+
+### Estimated no. seizures
+The estimated average number of seizures a 30 year old male might have.
+
+##### Placebo group
+1.53482 + 0.01842 x 30 = 2.09 seizures   
+robust standard errors, 95% C.I  
+U.B = 4.985882  
+L.B = 0  
+
+##### Progabide group  
+1.53482 + 1.81052 + 0.01842 x 30 + -0.07251 x 30 = 1.72 seizures   
+robust standard errors, 95% C.I  
+U.B = 9.720055  
+L.B = 0  
+
+### Model fit
+
+Using the residual deviance, we can perform a goodness of fit test on the model. The residual deviance for the model is (447.3376) with an associated p value of (~0). Since the test is statistically significant, it means the model does not have a good fit on the data. This might be a sign that overdispersion is an issue.
+```{r question2_model_fit, echo=FALSE, results=FALSE}
+# We can use the residual deviance to perform a goodness of fit test for the overall model. The residual deviance is the difference between the deviance of the current model and the maximum deviance of the ideal model where the predicted values are identical to the observed. Therefore, if the residual difference is small enough, the goodness of fit test will not be significant, indicating that the model fits the data. We conclude that the model fits reasonably well because the goodness-of-fit chi-squared test is not statistically significant. If the test had been statistically significant, it would indicate that the data do not fit the model well. In that situation, we may try to determine if there are omitted predictor variables, if our linearity assumption holds and/or if there is an issue of over-dispersion.
+
+with(m1, cbind(res.deviance = deviance, df = df.residual,
+  p = pchisq(deviance, df.residual, lower.tail=FALSE)))
+```
+
+```{r question2_bayesian, echo=FALSE, results=FALSE}
+library(MCMCpack)
+poisson.model.bayes <- MCMCpoisson(seizure.model.2, data=epilepsy)
+summary(poisson.model.bayes)
+#plot(poisson.model.bayes)
+```
+
+### Bayes model
+The intercept is (1.56), the coefficient for age is (0.02), the coefficient for treatmentProgabide is (1.81), and the interaction effect between age and treatment is (-0.07).
+
+### Analysis Summary
+Based on the poor fit found under Model Fit, it seems like overdispersion is an issue. As shown in section titled Overdispersion, a Negative Binomial model indicates a much better fit. 
+Overall, there is an interaction effect between the age and treatment, which means that the treatment, Progabide, might be more effective for older patients than for younger patients. 

@@ -1,4 +1,4 @@
-# Poisson model Epilepsy
+# Poisson model for Epilepsy in rate of Seizures
 
 The goal of this analysis is to model the number of seizures suffered by patients, alongside their age and a treatment. Thus, the core goal is to measure the effectiveness of the treatment, Progabide, against the placebo group, in reducing the number of seizures.
 

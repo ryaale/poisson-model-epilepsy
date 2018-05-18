@@ -20,9 +20,20 @@ epilepsy <- read.table("~/Desktop/GLM/Assignment/GLM Solo Assignment/epilepsy.tx
 
 The goal of this analysis is to model the number of seizures suffered by patients, alongside their age and a treatment. Thus, the core goal is to measure the effectiveness of the treatment, Progabide, against the placebo group, in reducing the number of seizures.
 
+### Descriptive Statistics
+
+```{r}
+library(tidyr)
+library(broom)
+seizure.model.1 <- 'seizure.rate ~ treatment + age'
+seizure.poisson.1 <- glm(seizure.model.1, family = poisson(link = "log"), data = epilepsy)
+kable(tidy(seizure.poisson.1), digits = 3)
+```
+
 ### Plot Seizures against treatment group
 
 ``` {r plot, echo=FALSE, results=FALSE}
+require(ggplot2)
 # Plot of seizures against treatment group, Progabide or placebo
 ggplot(epilepsy, aes(seizure.rate, fill = treatment)) +
   geom_histogram(binwidth=.5, position="dodge")
@@ -67,6 +78,7 @@ There seems to be the presence of a zero-inflated distribution, that is the numb
 
 When we fit a negative binomial model, we find that residual deviance (67.02) is much closer to the degrees of freedom (55), which means there is a much better fit than the Poisson model. This has an impact on the p values for the coefficients, which are now much less significant than they were in the Poisson model.
 ```{r question2_ngbinmodel, echo=FALSE, results=FALSE}
+require(MASS)
 ngbinmodel <- glm.nb(seizure.model.2, data = epilepsy)
 summary(ngbinmodel)
 ```

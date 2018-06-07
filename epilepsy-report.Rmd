@@ -2,6 +2,7 @@
 title: "Epilepsy Analysis"
 subtitle: "Alexander James Ryan"
 output: pdf_document
+date: "6 May 2018"
 toc: true
 toc_depth: 3
 ---
@@ -13,7 +14,7 @@ library(knitr)
 opts_chunk$set(echo=FALSE,
                cache=TRUE, autodep=TRUE, cache.comments=FALSE,
                message=FALSE, warning=FALSE)
-epilepsy <- read.table("~/Desktop/GLM/Assignment/GLM Solo Assignment/epilepsy.txt", header = TRUE)
+epilepsy <- read.table("~/Desktop/poisson-model-epilepsy/epilepsy.txt", header = TRUE)
 ```
 
 ## Analysis Epilepsy

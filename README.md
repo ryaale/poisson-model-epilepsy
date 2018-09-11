@@ -6,3 +6,7 @@ The goal of this analysis is to model the number of seizures suffered by patient
 
 Based on the poor fit found under Model Fit, it seems like overdispersion is an issue. As shown in 'Overdispersion', a Negative Binomial model indicates a better fit. 
 Overall, there is an interaction effect between the age and treatment, which means that the treatment, Progabide, might be more effective for older patients than for younger patients. 
+
+--------------------------------------------
+
+The report can be found above in 
